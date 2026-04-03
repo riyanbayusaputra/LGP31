@@ -39,14 +39,14 @@
           <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Total Penerima</p>
           <p class="text-3xl font-extrabold text-blue-600 tabular-nums">{{ store.total }}</p>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <!-- <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
           <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Hari Ini</p>
           <p class="text-3xl font-extrabold text-violet-500 tabular-nums">{{ todayCount }}</p>
-        </div>
-        <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        </div> -->
+        <!-- <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
           <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Terakhir Ditambah</p>
           <p class="text-sm font-semibold text-slate-700 mt-1 truncate">{{ lastAdded || '—' }}</p>
-        </div>
+        </div> -->
       </div>
 
       <!-- FORM -->
@@ -75,6 +75,8 @@ import { useLogbookStore } from './stores/logbook'
 import FormEntri    from './components/FormEntri.vue'
 import TabelLogbook from './components/TabelLogbook.vue'
 import ModalSalin   from './components/ModalSalin.vue'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 // Heroicons — ganti dengan import dari @heroicons/vue jika sudah install
 // atau pakai komponen SVG inline di bawah
@@ -92,9 +94,7 @@ const lastAdded = computed(() => {
   if (!store.entri.length) return null
   return store.entri[store.entri.length - 1].nama
 })
-
 async function exportPDF() {
-  const { jsPDF } = window.jspdf
   const doc = new jsPDF()
 
   // Header
@@ -104,47 +104,20 @@ async function exportPDF() {
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
   doc.text('Logbook Penerima LPG 3 Kg', 14, 12)
+
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })}`, 14, 21)
+  doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 21)
   doc.text(`Total: ${store.total} penerima`, 160, 21)
 
-  // Table
-  doc.autoTable({
+  // ✅ FIX DI SINI
+  autoTable(doc, {
     startY: 34,
     head: [['No', 'Nama', 'NIK']],
     body: store.entri.map((e, i) => [i + 1, e.nama, e.nik]),
-    styles: {
-      font: 'helvetica',
-      fontSize: 10,
-      cellPadding: 5,
-    },
-    headStyles: {
-      fillColor: [37, 99, 235],
-      textColor: 255,
-      fontStyle: 'bold',
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 255],
-    },
-    columnStyles: {
-      0: { halign: 'center', cellWidth: 14 },
-      1: { cellWidth: 90 },
-      2: { font: 'courier', fontSize: 9 },
-    },
   })
-
-  // Footer tiap halaman
-  const pageCount = doc.internal.getNumberOfPages()
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i)
-    doc.setFontSize(8)
-    doc.setTextColor(150)
-    doc.text(`Halaman ${i} dari ${pageCount}`, 105, 290, { align: 'center' })
-  }
 
   doc.save(`logbook-lpg-${Date.now()}.pdf`)
 }
-
 onMounted(() => store.fetchEntri())
 </script>
